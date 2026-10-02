@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+class ApplicationsScreen extends StatelessWidget {
+  const ApplicationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -9,7 +9,7 @@ class DashboardScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Job Application Tracker')),
+      appBar: AppBar(title: const Text('Applications')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -17,14 +17,14 @@ class DashboardScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Welcome',
+                'My Applications',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Stay organized throughout your job search journey.',
+                'Manage and track your active job applications.',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -34,11 +34,6 @@ class DashboardScreen extends StatelessWidget {
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 460),
                   child: Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: colorScheme.outlineVariant),
-                    ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24.0,
@@ -70,7 +65,7 @@ class DashboardScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Keep your job applications, interviews, statuses, and important details organized in one place.',
+                            'Your submitted job applications, statuses, and follow-up activities will be managed here.',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                               height: 1.5,
