@@ -121,6 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildStatsSection(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Row(
@@ -130,7 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Total',
                 value: _total.toString(),
                 icon: Icons.work_outline,
-                color: colorScheme.primary,
+                color: colorScheme.primary, // Orange
               ),
             ),
             const SizedBox(width: 12),
@@ -139,7 +140,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Interviews',
                 value: _interviews.toString(),
                 icon: Icons.forum_outlined,
-                color: colorScheme.tertiary,
+                color: colorScheme.tertiary, // Amber
               ),
             ),
           ],
@@ -152,7 +153,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Applied',
                 value: _applied.toString(),
                 icon: Icons.send_outlined,
-                color: colorScheme.secondary,
+                color: colorScheme.secondary, // Violet
               ),
             ),
             const SizedBox(width: 12),
@@ -161,7 +162,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Offers',
                 value: _offers.toString(),
                 icon: Icons.emoji_events_outlined,
-                color: colorScheme.primary,
+                color: isDark
+                    ? const Color(0xFF4CAF50)
+                    : Colors.green, // Dark green
               ),
             ),
             const SizedBox(width: 12),
@@ -170,7 +173,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Rejected',
                 value: _rejected.toString(),
                 icon: Icons.cancel_outlined,
-                color: const Color(0xFFE07A5F),
+                color: isDark
+                    ? const Color(0xFFD32F2F)
+                    : Colors.red, // Dark muted red
               ),
             ),
           ],
@@ -186,10 +191,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 48.0, horizontal: 24.0),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? colorScheme.outlineVariant
+              : colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -269,7 +276,9 @@ class _StatCard extends StatelessWidget {
         color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: isDark
+              ? colorScheme.outlineVariant
+              : colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
@@ -324,17 +333,18 @@ class _ApplicationTile extends StatelessWidget {
 
   Color _getStatusColor(BuildContext context, ApplicationStatus status) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     switch (status) {
       case ApplicationStatus.applied:
-        return colorScheme.secondary;
+        return colorScheme.secondary; // violet
       case ApplicationStatus.screening:
-        return colorScheme.secondary;
+        return colorScheme.tertiary; // amber
       case ApplicationStatus.interview:
-        return colorScheme.tertiary;
+        return colorScheme.primary; // coral
       case ApplicationStatus.offer:
-        return colorScheme.primary;
+        return isDark ? const Color(0xFF4CAF50) : Colors.green;
       case ApplicationStatus.rejected:
-        return const Color(0xFFE07A5F);
+        return isDark ? const Color(0xFFD32F2F) : Colors.red;
     }
   }
 
@@ -356,7 +366,9 @@ class _ApplicationTile extends StatelessWidget {
         color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: isDark
+              ? colorScheme.outlineVariant
+              : colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
@@ -442,7 +454,7 @@ class _ApplicationTile extends StatelessWidget {
             child: Text(
               _getStatusText(application.status),
               style: theme.textTheme.labelSmall?.copyWith(
-                color: isDark ? Colors.white : statusColor,
+                color: isDark ? colorScheme.onSurface : statusColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
