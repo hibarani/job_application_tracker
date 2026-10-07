@@ -120,6 +120,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildStatsSection(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         Row(
@@ -129,7 +130,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Total',
                 value: _total.toString(),
                 icon: Icons.work_outline,
-                color: Theme.of(context).colorScheme.primary,
+                color: colorScheme.primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -138,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Interviews',
                 value: _interviews.toString(),
                 icon: Icons.forum_outlined,
-                color: Colors.amber.shade700,
+                color: colorScheme.tertiary,
               ),
             ),
           ],
@@ -151,7 +152,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Applied',
                 value: _applied.toString(),
                 icon: Icons.send_outlined,
-                color: Colors.blue.shade600,
+                color: colorScheme.secondary,
               ),
             ),
             const SizedBox(width: 12),
@@ -160,7 +161,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Offers',
                 value: _offers.toString(),
                 icon: Icons.emoji_events_outlined,
-                color: Colors.green.shade600,
+                color: colorScheme.primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -169,7 +170,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Rejected',
                 value: _rejected.toString(),
                 icon: Icons.cancel_outlined,
-                color: Colors.red.shade500,
+                color: const Color(0xFFE07A5F),
               ),
             ),
           ],
@@ -265,7 +266,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.5),
@@ -321,18 +322,19 @@ class _ApplicationTile extends StatelessWidget {
 
   const _ApplicationTile({required this.application});
 
-  Color _getStatusColor(ApplicationStatus status) {
+  Color _getStatusColor(BuildContext context, ApplicationStatus status) {
+    final colorScheme = Theme.of(context).colorScheme;
     switch (status) {
       case ApplicationStatus.applied:
-        return Colors.blue;
+        return colorScheme.secondary;
       case ApplicationStatus.screening:
-        return Colors.purple;
+        return colorScheme.secondary;
       case ApplicationStatus.interview:
-        return Colors.amber.shade700;
+        return colorScheme.tertiary;
       case ApplicationStatus.offer:
-        return Colors.green;
+        return colorScheme.primary;
       case ApplicationStatus.rejected:
-        return Colors.red;
+        return const Color(0xFFE07A5F);
     }
   }
 
@@ -345,13 +347,13 @@ class _ApplicationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final statusColor = _getStatusColor(application.status);
+    final statusColor = _getStatusColor(context, application.status);
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.5),
@@ -371,7 +373,7 @@ class _ApplicationTile extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,

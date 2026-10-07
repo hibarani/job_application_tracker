@@ -4,17 +4,25 @@ import 'package:flutter/material.dart';
 class AppTheme {
   AppTheme._();
 
-  static const Color _seedColor = Color(0xFF10B981); // Emerald/Teal
+  // Premium Dark Productivity App Palette
+  static const Color darkBackground = Color(0xFF17182F); // Deep Indigo-Navy
+  static const Color darkSurface = Color(0xFF211F42); // Rich Indigo
+  static const Color primaryAccent = Color(0xFFE9785B); // Muted Coral
+  static const Color secondaryAccent = Color(0xFF7167B5); // Soft Violet-Indigo
+  static const Color supportingAccent = Color(0xFFE5B866); // Soft Amber
+  static const Color textPrimary = Color(0xFFF4F0E8); // Warm Ivory
+  static const Color textSecondary = Color(0xFFAAA8BC); // Muted Lavender Gray
+
   static const double borderRadius = 16.0;
 
   /// Light theme definition.
   static ThemeData get lightTheme {
     return _buildTheme(
       ColorScheme.fromSeed(
-        seedColor: _seedColor,
+        seedColor: primaryAccent,
         brightness: Brightness.light,
-        surface: const Color(0xFFF9FAFB), // Warm off-white
-        onSurface: const Color(0xFF1F2937), // Deep charcoal
+        surface: const Color(0xFFF9FAFB),
+        onSurface: const Color(0xFF1F2937),
       ),
     );
   }
@@ -23,10 +31,16 @@ class AppTheme {
   static ThemeData get darkTheme {
     return _buildTheme(
       ColorScheme.fromSeed(
-        seedColor: _seedColor,
+        seedColor: primaryAccent,
         brightness: Brightness.dark,
-        surface: const Color(0xFF111827), // Deep charcoal foundation
-        onSurface: const Color(0xFFF9FAFB), // Off-white text
+        surface: darkBackground,
+        onSurface: textPrimary,
+      ).copyWith(
+        surfaceContainerHighest: darkSurface,
+        onSurfaceVariant: textSecondary,
+        primary: primaryAccent,
+        secondary: secondaryAccent,
+        tertiary: supportingAccent,
       ),
     );
   }
@@ -44,11 +58,12 @@ class AppTheme {
         foregroundColor: colorScheme.onSurface,
       ),
       cardTheme: CardThemeData(
+        color: colorScheme.surfaceContainerHighest,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
           side: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            color: colorScheme.outlineVariant.withValues(alpha: 0.1),
           ),
         ),
       ),
@@ -86,7 +101,7 @@ class AppTheme {
         elevation: 2,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.primaryContainer,
+        indicatorColor: colorScheme.primary.withValues(alpha: 0.2),
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
