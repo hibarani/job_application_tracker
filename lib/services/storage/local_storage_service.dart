@@ -26,10 +26,16 @@ class LocalStorageService {
 
   Future<void> saveApplications(List<JobApplication> applications) async {
     final prefs = await SharedPreferences.getInstance();
-    final List<Map<String, dynamic>> jsonList =
-        applications.map((app) => app.toJson()).toList();
+    final List<Map<String, dynamic>> jsonList = applications
+        .map((app) => app.toJson())
+        .toList();
 
     final String jsonString = jsonEncode(jsonList);
     await prefs.setString(_applicationsKey, jsonString);
+  }
+
+  Future<void> deleteAllApplications() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_applicationsKey);
   }
 }
