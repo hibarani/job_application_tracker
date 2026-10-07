@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:job_application_tracker/features/applications/models/job_application.dart';
+import 'package:job_application_tracker/features/applications/screens/add_application_screen.dart';
 import 'package:job_application_tracker/services/storage/local_storage_service.dart';
 
 class ApplicationsScreen extends StatefulWidget {
@@ -52,8 +53,16 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement Add Application flow in Phase 7
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddApplicationScreen(),
+            ),
+          );
+          if (result == true) {
+            _loadData();
+          }
         },
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
@@ -155,8 +164,16 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
             ),
             const SizedBox(height: 32),
             FilledButton.icon(
-              onPressed: () {
-                // TODO: Implement Add Application flow in Phase 7
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddApplicationScreen(),
+                  ),
+                );
+                if (result == true) {
+                  _loadData();
+                }
               },
               icon: const Icon(Icons.add),
               label: const Text('Add Application'),
