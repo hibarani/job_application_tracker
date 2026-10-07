@@ -4,20 +4,30 @@ import 'package:flutter/material.dart';
 class AppTheme {
   AppTheme._();
 
-  static const Color _seedColor = Color(0xFF2563EB);
-  static const double borderRadius = 12.0;
+  static const Color _seedColor = Color(0xFF10B981); // Emerald/Teal
+  static const double borderRadius = 16.0;
 
   /// Light theme definition.
   static ThemeData get lightTheme {
     return _buildTheme(
-      ColorScheme.fromSeed(seedColor: _seedColor, brightness: Brightness.light),
+      ColorScheme.fromSeed(
+        seedColor: _seedColor,
+        brightness: Brightness.light,
+        surface: const Color(0xFFF9FAFB), // Warm off-white
+        onSurface: const Color(0xFF1F2937), // Deep charcoal
+      ),
     );
   }
 
   /// Dark theme definition.
   static ThemeData get darkTheme {
     return _buildTheme(
-      ColorScheme.fromSeed(seedColor: _seedColor, brightness: Brightness.dark),
+      ColorScheme.fromSeed(
+        seedColor: _seedColor,
+        brightness: Brightness.dark,
+        surface: const Color(0xFF111827), // Deep charcoal foundation
+        onSurface: const Color(0xFFF9FAFB), // Off-white text
+      ),
     );
   }
 
@@ -37,7 +47,9 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          side: BorderSide(color: colorScheme.outlineVariant),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -70,9 +82,11 @@ class AppTheme {
           ),
         ),
       ),
-      navigationBarTheme: const NavigationBarThemeData(
+      navigationBarTheme: NavigationBarThemeData(
         elevation: 2,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.primaryContainer,
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
