@@ -198,7 +198,10 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final app = _applications[index];
-        return _ApplicationListCard(application: app);
+        return _ApplicationListCard(
+          application: app,
+          onUpdate: _loadData,
+        );
       },
     );
   }
@@ -206,8 +209,12 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
 
 class _ApplicationListCard extends StatelessWidget {
   final JobApplication application;
+  final VoidCallback onUpdate;
 
-  const _ApplicationListCard({required this.application});
+  const _ApplicationListCard({
+    required this.application,
+    required this.onUpdate,
+  });
 
   Color _getStatusColor(BuildContext context, ApplicationStatus status) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -320,6 +327,24 @@ class _ApplicationListCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                color: colorScheme.onSurfaceVariant,
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddApplicationScreen(application: application),
+                    ),
+                  );
+                  if (result == true) {
+                    onUpdate();
+                  }
+                },
               ),
             ],
           ),

@@ -3,7 +3,9 @@ import 'package:job_application_tracker/features/applications/models/job_applica
 import 'package:job_application_tracker/services/storage/local_storage_service.dart';
 
 class AddApplicationScreen extends StatefulWidget {
-  const AddApplicationScreen({super.key});
+  final JobApplication? application;
+
+  const AddApplicationScreen({super.key, this.application});
 
   @override
   State<AddApplicationScreen> createState() => _AddApplicationScreenState();
@@ -42,6 +44,24 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
       'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.application != null) {
+      final app = widget.application!;
+      _companyController.text = app.companyName;
+      _jobTitleController.text = app.jobTitle;
+      _locationController.text = app.location;
+      _jobUrlController.text = app.jobUrl;
+      _salaryController.text = app.salary?.toString() ?? '';
+      _contactController.text = app.contactName ?? '';
+      _notesController.text = app.notes;
+      _applicationDate = app.applicationDate;
+      _interviewDate = app.interviewDate;
+      _status = app.status;
+    }
   }
 
   @override
@@ -117,7 +137,7 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
       }
 
       final newApp = JobApplication(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: widget.application?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         companyName: _companyController.text.trim(),
         jobTitle: _jobTitleController.text.trim(),
         location: _locationController.text.trim(),
@@ -128,10 +148,19 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
         interviewDate: _interviewDate,
         notes: _notesController.text.trim(),
         contactName: _contactController.text.trim(),
-        isFavorite: false,
+        isFavorite: widget.application?.isFavorite ?? false,
       );
 
-      existingApps.add(newApp);
+      if (widget.application != null) {
+        final index = existingApps.indexWhere((a) => a.id == widget.application!.id);
+        if (index != -1) {
+          existingApps[index] = newApp;
+        } else {
+          existingApps.add(newApp);
+        }
+      } else {
+        existingApps.add(newApp);
+      }
       await _storageService.saveApplications(existingApps);
 
       if (mounted) {
@@ -205,9 +234,9 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Add Application',
-          style: TextStyle(fontWeight: FontWeight.w600),
+        title: Text(
+          widget.application != null ? 'Edit Application' : 'Add Application',
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -454,9 +483,9 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
                               ),
                             ),
                           )
-                        : const Text(
-                            'Save Application',
-                            style: TextStyle(
+                        : Text(
+                            widget.application != null ? 'Update Application' : 'Save Application',
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
