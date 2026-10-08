@@ -19,6 +19,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   ApplicationStatus? _selectedStatus;
+  bool _filterFavorites = false;
   bool _sortNewestFirst = true;
 
   @override
@@ -70,6 +71,10 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
 
     if (_selectedStatus != null) {
       result = result.where((app) => app.status == _selectedStatus).toList();
+    }
+
+    if (_filterFavorites) {
+      result = result.where((app) => app.isFavorite).toList();
     }
 
     result.sort((a, b) {
@@ -194,6 +199,8 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
               children: [
                 _buildFilterChip(null, 'All'),
                 const SizedBox(width: 8),
+                _buildFavoriteFilterChip(),
+                const SizedBox(width: 8),
                 ...ApplicationStatus.values.map((status) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8.0),
@@ -254,8 +261,65 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
     );
   }
 
+  Widget _buildFavoriteFilterChip() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return FilterChip(
+      label: const Text('Favorites'),
+      avatar: Icon(
+        _filterFavorites ? Icons.favorite : Icons.favorite_border,
+        size: 18,
+        color: _filterFavorites ? colorScheme.primary : colorScheme.onSurfaceVariant,
+      ),
+      selected: _filterFavorites,
+      onSelected: (selected) {
+        setState(() {
+          _filterFavorites = selected;
+        });
+      },
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      selectedColor: colorScheme.primary.withValues(alpha: 0.2),
+      checkmarkColor: colorScheme.primary,
+      showCheckmark: false,
+      labelStyle: TextStyle(
+        color: _filterFavorites ? colorScheme.primary : colorScheme.onSurfaceVariant,
+        fontWeight: _filterFavorites ? FontWeight.bold : FontWeight.normal,
+      ),
+      side: BorderSide(
+        color: _filterFavorites ? colorScheme.primary : colorScheme.outlineVariant,
+      ),
+    );
+  }
+
   Widget _buildEmptySearchState(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    if (_filterFavorites && _searchQuery.trim().isEmpty && _selectedStatus == null) {
+      return Center(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.favorite_border, size: 64, color: colorScheme.onSurfaceVariant),
+              const SizedBox(height: 16),
+              Text(
+                'No favorite applications',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Mark applications as favorites to find them quickly here.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Center(
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -280,6 +344,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                 setState(() {
                   _searchController.clear();
                   _selectedStatus = null;
+                  _filterFavorites = false;
                   _sortNewestFirst = true;
                 });
               },
@@ -506,6 +571,27 @@ class _ApplicationListCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: Icon(
+                  application.isFavorite ? Icons.favorite : Icons.favorite_border,
+                  size: 20,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                color: application.isFavorite ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                onPressed: () async {
+                  final storageService = LocalStorageService();
+                  final updatedApp = application.copyWith(isFavorite: !application.isFavorite);
+                  final apps = await storageService.loadApplications();
+                  final index = apps.indexWhere((a) => a.id == updatedApp.id);
+                  if (index != -1) {
+                    apps[index] = updatedApp;
+                    await storageService.saveApplications(apps);
+                    onUpdate();
+                  }
+                },
               ),
               const SizedBox(width: 8),
               IconButton(

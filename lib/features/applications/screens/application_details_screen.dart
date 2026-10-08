@@ -2,10 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:job_application_tracker/features/applications/models/job_application.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ApplicationDetailsScreen extends StatelessWidget {
+import 'package:job_application_tracker/services/storage/local_storage_service.dart';
+
+class ApplicationDetailsScreen extends StatefulWidget {
   final JobApplication application;
 
   const ApplicationDetailsScreen({super.key, required this.application});
+
+  @override
+  State<ApplicationDetailsScreen> createState() => _ApplicationDetailsScreenState();
+}
+
+class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
+  late JobApplication _currentApplication;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentApplication = widget.application;
+  }
 
   String _formatDate(DateTime date) {
     const months = [
@@ -73,6 +88,28 @@ class ApplicationDetailsScreen extends StatelessWidget {
         backgroundColor: bgColor,
         iconTheme: const IconThemeData(color: primaryText),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              _currentApplication.isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: _currentApplication.isFavorite ? coralAccent : primaryText,
+            ),
+            tooltip: _currentApplication.isFavorite ? 'Remove from favorites' : 'Mark as favorite',
+            onPressed: () async {
+              final storageService = LocalStorageService();
+              final updatedApp = _currentApplication.copyWith(isFavorite: !_currentApplication.isFavorite);
+              final apps = await storageService.loadApplications();
+              final index = apps.indexWhere((a) => a.id == updatedApp.id);
+              if (index != -1) {
+                apps[index] = updatedApp;
+                await storageService.saveApplications(apps);
+                setState(() {
+                  _currentApplication = updatedApp;
+                });
+              }
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -92,7 +129,7 @@ class ApplicationDetailsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      application.jobTitle,
+                      _currentApplication.jobTitle,
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -101,7 +138,7 @@ class ApplicationDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      application.companyName,
+                      _currentApplication.companyName,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
@@ -115,7 +152,7 @@ class ApplicationDetailsScreen extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            application.location.isNotEmpty ? application.location : 'Location not specified',
+                            _currentApplication.location.isNotEmpty ? _currentApplication.location : 'Location not specified',
                             style: const TextStyle(color: secondaryText),
                           ),
                         ),
@@ -125,14 +162,14 @@ class ApplicationDetailsScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(application.status).withValues(alpha: 0.2),
+                        color: _getStatusColor(_currentApplication.status).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _getStatusColor(application.status).withValues(alpha: 0.5)),
+                        border: Border.all(color: _getStatusColor(_currentApplication.status).withValues(alpha: 0.5)),
                       ),
                       child: Text(
-                        _getStatusText(application.status),
+                        _getStatusText(_currentApplication.status),
                         style: TextStyle(
-                          color: _getStatusColor(application.status),
+                          color: _getStatusColor(_currentApplication.status),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -150,17 +187,17 @@ class ApplicationDetailsScreen extends StatelessWidget {
                 primaryText: primaryText,
                 secondaryText: secondaryText,
                 children: [
-                  _buildInfoRow(Icons.calendar_today_outlined, 'Application Date', _formatDate(application.applicationDate), primaryText, secondaryText),
-                  if (application.interviewDate != null) ...[
+                  _buildInfoRow(Icons.calendar_today_outlined, 'Application Date', _formatDate(_currentApplication.applicationDate), primaryText, secondaryText),
+                  if (_currentApplication.interviewDate != null) ...[
                     const SizedBox(height: 16),
-                    _buildInfoRow(Icons.event_available_outlined, 'Interview Date', _formatDate(application.interviewDate!), primaryText, secondaryText),
+                    _buildInfoRow(Icons.event_available_outlined, 'Interview Date', _formatDate(_currentApplication.interviewDate!), primaryText, secondaryText),
                   ]
                 ],
               ),
               const SizedBox(height: 24),
 
               // Job Information
-              if (application.jobUrl.isNotEmpty || application.salary != null) ...[
+              if (_currentApplication.jobUrl.isNotEmpty || _currentApplication.salary != null) ...[
                 _buildSectionCard(
                   title: 'Job Information',
                   surfaceColor: surfaceColor,
@@ -168,13 +205,13 @@ class ApplicationDetailsScreen extends StatelessWidget {
                   primaryText: primaryText,
                   secondaryText: secondaryText,
                   children: [
-                    if (application.salary != null)
-                      _buildInfoRow(Icons.attach_money_outlined, 'Salary', application.salary!.toString(), primaryText, secondaryText),
-                    if (application.jobUrl.isNotEmpty && application.salary != null)
+                    if (_currentApplication.salary != null)
+                      _buildInfoRow(Icons.attach_money_outlined, 'Salary', _currentApplication.salary!.toString(), primaryText, secondaryText),
+                    if (_currentApplication.jobUrl.isNotEmpty && _currentApplication.salary != null)
                       const SizedBox(height: 16),
-                    if (application.jobUrl.isNotEmpty)
+                    if (_currentApplication.jobUrl.isNotEmpty)
                       InkWell(
-                        onTap: () => _launchUrl(application.jobUrl),
+                        onTap: () => _launchUrl(_currentApplication.jobUrl),
                         borderRadius: BorderRadius.circular(8),
                         child: const Padding(
                           padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -199,7 +236,7 @@ class ApplicationDetailsScreen extends StatelessWidget {
               ],
 
               // Contact Information
-              if (application.contactName != null && application.contactName!.isNotEmpty) ...[
+              if (_currentApplication.contactName != null && _currentApplication.contactName!.isNotEmpty) ...[
                 _buildSectionCard(
                   title: 'Contact Information',
                   surfaceColor: surfaceColor,
@@ -207,14 +244,14 @@ class ApplicationDetailsScreen extends StatelessWidget {
                   primaryText: primaryText,
                   secondaryText: secondaryText,
                   children: [
-                    _buildInfoRow(Icons.person_outline, 'Contact Person', application.contactName!, primaryText, secondaryText),
+                    _buildInfoRow(Icons.person_outline, 'Contact Person', _currentApplication.contactName!, primaryText, secondaryText),
                   ],
                 ),
                 const SizedBox(height: 24),
               ],
 
               // Notes
-              if (application.notes.isNotEmpty) ...[
+              if (_currentApplication.notes.isNotEmpty) ...[
                 _buildSectionCard(
                   title: 'Notes',
                   surfaceColor: surfaceColor,
@@ -223,7 +260,7 @@ class ApplicationDetailsScreen extends StatelessWidget {
                   secondaryText: secondaryText,
                   children: [
                     Text(
-                      application.notes,
+                      _currentApplication.notes,
                       style: const TextStyle(color: primaryText, height: 1.5),
                     ),
                   ],
