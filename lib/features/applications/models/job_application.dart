@@ -88,13 +88,15 @@ class JobApplication {
     }
 
     return JobApplication(
-      id: json['id'] as String,
-      companyName: json['companyName'] as String,
-      jobTitle: json['jobTitle'] as String,
-      location: json['location'] as String,
-      applicationDate: DateTime.parse(json['applicationDate'] as String),
+      id: json['id'] as String? ?? '',
+      companyName: json['companyName'] as String? ?? '',
+      jobTitle: json['jobTitle'] as String? ?? '',
+      location: json['location'] as String? ?? '',
+      applicationDate: json['applicationDate'] != null 
+          ? DateTime.parse(json['applicationDate'] as String) 
+          : DateTime.now(),
       status: parsedStatus,
-      jobUrl: json['jobUrl'] as String,
+      jobUrl: json['jobUrl'] as String? ?? '',
       salary: (json['salary'] as num?)?.toDouble(),
       interviewDate: json['interviewDate'] != null
           ? DateTime.parse(json['interviewDate'] as String)

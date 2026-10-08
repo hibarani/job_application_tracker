@@ -16,10 +16,26 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
   List<JobApplication> _applications = [];
   bool _isLoading = true;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  ApplicationStatus? _selectedStatus;
+  bool _sortNewestFirst = true;
+
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -39,6 +55,32 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
         });
       }
     }
+  }
+
+  List<JobApplication> get _filteredApplications {
+    List<JobApplication> result = List.from(_applications);
+
+    if (_searchQuery.trim().isNotEmpty) {
+      final query = _searchQuery.trim().toLowerCase();
+      result = result.where((app) {
+        return app.companyName.toLowerCase().contains(query) ||
+            app.jobTitle.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    if (_selectedStatus != null) {
+      result = result.where((app) => app.status == _selectedStatus).toList();
+    }
+
+    result.sort((a, b) {
+      if (_sortNewestFirst) {
+        return b.applicationDate.compareTo(a.applicationDate);
+      } else {
+        return a.applicationDate.compareTo(b.applicationDate);
+      }
+    });
+
+    return result;
   }
 
   @override
@@ -96,6 +138,8 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                         ),
                         const SizedBox(height: 24),
                         _buildSearchField(context),
+                        const SizedBox(height: 16),
+                        _buildFiltersAndSort(context),
                       ],
                     ),
                   ),
@@ -104,7 +148,9 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                       onRefresh: _loadData,
                       child: _applications.isEmpty
                           ? _buildEmptyState(context)
-                          : _buildApplicationsList(context),
+                          : _filteredApplications.isEmpty
+                              ? _buildEmptySearchState(context)
+                              : _buildApplicationsList(context, _filteredApplications),
                     ),
                   ),
                 ],
@@ -116,10 +162,132 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
   Widget _buildSearchField(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return TextField(
+      controller: _searchController,
       decoration: InputDecoration(
         hintText: 'Search applications...',
         hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
+        suffixIcon: _searchQuery.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _searchController.clear();
+                },
+              )
+            : null,
+      ),
+    );
+  }
+
+  String _getStatusText(ApplicationStatus status) {
+    final text = status.name;
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
+  Widget _buildFiltersAndSort(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip(null, 'All'),
+                const SizedBox(width: 8),
+                ...ApplicationStatus.values.map((status) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: _buildFilterChip(status, _getStatusText(status)),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        PopupMenuButton<bool>(
+          initialValue: _sortNewestFirst,
+          icon: const Icon(Icons.sort),
+          tooltip: 'Sort Applications',
+          onSelected: (newestFirst) {
+            setState(() {
+              _sortNewestFirst = newestFirst;
+            });
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: true,
+              child: Text('Newest First'),
+            ),
+            const PopupMenuItem(
+              value: false,
+              child: Text('Oldest First'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterChip(ApplicationStatus? status, String label) {
+    final isSelected = _selectedStatus == status;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          _selectedStatus = selected ? status : null;
+        });
+      },
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      selectedColor: colorScheme.primary.withValues(alpha: 0.2),
+      checkmarkColor: colorScheme.primary,
+      labelStyle: TextStyle(
+        color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      side: BorderSide(
+        color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
+      ),
+    );
+  }
+
+  Widget _buildEmptySearchState(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: colorScheme.onSurfaceVariant),
+            const SizedBox(height: 16),
+            Text(
+              'No matching applications',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try changing your search or filters.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 24),
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _searchController.clear();
+                  _selectedStatus = null;
+                  _sortNewestFirst = true;
+                });
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reset Filters'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -191,14 +359,14 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
     );
   }
 
-  Widget _buildApplicationsList(BuildContext context) {
+  Widget _buildApplicationsList(BuildContext context, List<JobApplication> apps) {
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(left: 20, right: 20, top: 8, bottom: 80),
-      itemCount: _applications.length,
+      itemCount: apps.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final app = _applications[index];
+        final app = apps[index];
         return _ApplicationListCard(
           application: app,
           onUpdate: _loadData,
