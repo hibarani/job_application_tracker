@@ -31,12 +31,6 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _screens = [
-    DashboardScreen(),
-    ApplicationsScreen(),
-    StatisticsScreen(),
-    SettingsScreen(),
-  ];
 
   void _onDestinationSelected(int index) {
     setState(() {
@@ -47,7 +41,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _screens),
+      body: IndexedStack(
+        index: _selectedIndex, 
+        children: [
+          const DashboardScreen(),
+          const ApplicationsScreen(),
+          StatisticsScreen(isActive: _selectedIndex == 2),
+          const SettingsScreen(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onDestinationSelected,
