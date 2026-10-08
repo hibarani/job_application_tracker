@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:job_application_tracker/features/applications/models/job_application.dart';
 import 'package:job_application_tracker/features/applications/screens/add_application_screen.dart';
+import 'package:job_application_tracker/features/applications/screens/application_details_screen.dart';
 import 'package:job_application_tracker/services/storage/local_storage_service.dart';
 
 class ApplicationsScreen extends StatefulWidget {
@@ -245,20 +246,30 @@ class _ApplicationListCard extends StatelessWidget {
     final statusColor = _getStatusColor(context, application.status);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? colorScheme.outlineVariant
-              : colorScheme.outlineVariant.withValues(alpha: 0.5),
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ApplicationDetailsScreen(application: application),
+          ),
+        );
+        onUpdate();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? colorScheme.outlineVariant
+                : colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -385,6 +396,7 @@ class _ApplicationListCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
