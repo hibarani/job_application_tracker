@@ -5,7 +5,8 @@ import 'package:job_application_tracker/features/applications/screens/applicatio
 import 'package:job_application_tracker/services/storage/local_storage_service.dart';
 
 class ApplicationsScreen extends StatefulWidget {
-  const ApplicationsScreen({super.key});
+  final bool isActive;
+  const ApplicationsScreen({super.key, this.isActive = false});
 
   @override
   State<ApplicationsScreen> createState() => _ApplicationsScreenState();
@@ -37,6 +38,14 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(ApplicationsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _loadData();
+    }
   }
 
   Future<void> _loadData() async {

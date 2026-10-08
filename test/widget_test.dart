@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:job_application_tracker/app/app.dart';
 
@@ -5,7 +6,7 @@ void main() {
   testWidgets('App renders main navigation and switches tabs', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const App());
+    await tester.pumpWidget(const App(initialThemeMode: ThemeMode.system));
 
     // Verify Dashboard is initially visible
     expect(find.text('Dashboard'), findsOneWidget);
@@ -29,7 +30,7 @@ void main() {
     expect(find.text('No Statistics Available'), findsOneWidget);
 
     // Tap Settings tab
-    await tester.tap(find.text('Settings'));
+    await tester.tap(find.text('Settings').last);
     await tester.pumpAndSettle();
     expect(find.text('Preferences'), findsOneWidget);
     expect(find.text('Preferences Coming Soon'), findsOneWidget);

@@ -3,7 +3,8 @@ import 'package:job_application_tracker/features/applications/models/job_applica
 import 'package:job_application_tracker/services/storage/local_storage_service.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final bool isActive;
+  const DashboardScreen({super.key, this.isActive = false});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -18,6 +19,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void didUpdateWidget(DashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _loadData();
+    }
   }
 
   Future<void> _loadData() async {
