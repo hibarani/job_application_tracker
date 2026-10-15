@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:job_application_tracker/features/applications/models/job_application.dart';
-import 'package:url_launcher/url_launcher.dart';
-
+import 'package:job_application_tracker/features/applications/screens/add_application_screen.dart';
 import 'package:job_application_tracker/services/storage/local_storage_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ApplicationDetailsScreen extends StatefulWidget {
   final JobApplication application;
@@ -10,7 +10,8 @@ class ApplicationDetailsScreen extends StatefulWidget {
   const ApplicationDetailsScreen({super.key, required this.application});
 
   @override
-  State<ApplicationDetailsScreen> createState() => _ApplicationDetailsScreenState();
+  State<ApplicationDetailsScreen> createState() =>
+      _ApplicationDetailsScreenState();
 }
 
 class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
@@ -40,18 +41,20 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
-  Color _getStatusColor(ApplicationStatus status) {
+  Color _getStatusColor(BuildContext context, ApplicationStatus status) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     switch (status) {
       case ApplicationStatus.applied:
-        return const Color(0xFF03DAC6); 
+        return colorScheme.secondary;
       case ApplicationStatus.screening:
-        return const Color(0xFFFFB74D); 
+        return colorScheme.tertiary;
       case ApplicationStatus.interview:
-        return const Color(0xFF8175D6); 
+        return colorScheme.primary;
       case ApplicationStatus.offer:
-        return const Color(0xFF4CAF50);
+        return isDark ? const Color(0xFF4CAF50) : Colors.green;
       case ApplicationStatus.rejected:
-        return const Color(0xFFD32F2F);
+        return isDark ? const Color(0xFFD32F2F) : colorScheme.error;
     }
   }
 
@@ -71,106 +74,164 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
     }
   }
 
+  Future<void> _editApplication() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            AddApplicationScreen(application: _currentApplication),
+      ),
+    );
+
+    if (result == true && mounted) {
+      try {
+        final storageService = LocalStorageService();
+        final apps = await storageService.loadApplications();
+        final updated = apps.firstWhere(
+          (a) => a.id == _currentApplication.id,
+          orElse: () => _currentApplication,
+        );
+        if (mounted) {
+          setState(() {
+            _currentApplication = updated;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to refresh application: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    try {
+      final storageService = LocalStorageService();
+      final updatedApp = _currentApplication.copyWith(
+        isFavorite: !_currentApplication.isFavorite,
+      );
+      final apps = await storageService.loadApplications();
+      final index = apps.indexWhere((a) => a.id == updatedApp.id);
+      if (index != -1) {
+        apps[index] = updatedApp;
+        await storageService.saveApplications(apps);
+        if (mounted) {
+          setState(() {
+            _currentApplication = updatedApp;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update favorite: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteApplication() async {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Application?'),
+        content: Text(
+          'Are you sure you want to delete "${_currentApplication.jobTitle}" at "${_currentApplication.companyName}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        final storageService = LocalStorageService();
+        await storageService.deleteApplication(_currentApplication.id);
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete application: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    const bgColor = Color(0xFF10152B);
-    const surfaceColor = Color(0xFF3B3475);
-    const borderColor = Color(0xFF4A4380);
-    const coralAccent = Color(0xFFFF8A65);
-    const violetAccent = Color(0xFF8175D6);
-    const primaryText = Color(0xFFF7F3EA);
-    const secondaryText = Color(0xFFB8B5CC);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final surfaceColor = colorScheme.surfaceContainerHighest;
+    final borderColor = isDark
+        ? colorScheme.outlineVariant
+        : colorScheme.outlineVariant.withValues(alpha: 0.5);
+    final primaryAccent = colorScheme.primary;
+    final secondaryAccent = colorScheme.secondary;
+    final primaryText = colorScheme.onSurface;
+    final secondaryText = colorScheme.onSurfaceVariant;
+    final statusColor = _getStatusColor(context, _currentApplication.status);
 
     return Scaffold(
-      backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text('Application Details', style: TextStyle(color: primaryText, fontWeight: FontWeight.w600)),
-        backgroundColor: bgColor,
-        iconTheme: const IconThemeData(color: primaryText),
-        elevation: 0,
+        title: const Text(
+          'Application Details',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         actions: [
           IconButton(
-            icon: Icon(
-              _currentApplication.isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: _currentApplication.isFavorite ? coralAccent : primaryText,
-            ),
-            tooltip: _currentApplication.isFavorite ? 'Remove from favorites' : 'Mark as favorite',
-            onPressed: () async {
-              try {
-                final storageService = LocalStorageService();
-                final updatedApp = _currentApplication.copyWith(isFavorite: !_currentApplication.isFavorite);
-                final apps = await storageService.loadApplications();
-                final index = apps.indexWhere((a) => a.id == updatedApp.id);
-                if (index != -1) {
-                  apps[index] = updatedApp;
-                  await storageService.saveApplications(apps);
-                  setState(() {
-                    _currentApplication = updatedApp;
-                  });
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to update favorite: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit Application',
+            onPressed: _editApplication,
           ),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
+              _currentApplication.isFavorite
+                  ? Icons.favorite
+                  : Icons.favorite_border,
+              color: _currentApplication.isFavorite ? primaryAccent : null,
+            ),
+            tooltip: _currentApplication.isFavorite
+                ? 'Remove from favorites'
+                : 'Mark as favorite',
+            onPressed: _toggleFavorite,
+          ),
+          IconButton(
+            icon: Icon(
               Icons.delete_outline,
-              color: Color(0xFFD32F2F),
+              color: colorScheme.error,
             ),
             tooltip: 'Delete Application',
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  backgroundColor: surfaceColor,
-                  title: const Text('Delete Application?', style: TextStyle(color: primaryText)),
-                  content: Text(
-                    'Are you sure you want to delete "${_currentApplication.jobTitle}" at "${_currentApplication.companyName}"?',
-                    style: const TextStyle(color: secondaryText),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('Cancel', style: TextStyle(color: secondaryText)),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD32F2F),
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Delete'),
-                    ),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                try {
-                  final storageService = LocalStorageService();
-                  await storageService.deleteApplication(_currentApplication.id);
-                  if (context.mounted) {
-                    Navigator.pop(context, true);
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to delete application: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              }
-            },
+            onPressed: _deleteApplication,
           ),
         ],
       ),
@@ -193,7 +254,7 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
                   children: [
                     Text(
                       _currentApplication.jobTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: primaryText,
@@ -202,37 +263,52 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
                     const SizedBox(height: 8),
                     Text(
                       _currentApplication.companyName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
-                        color: coralAccent,
+                        color: primaryAccent,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_outlined, color: secondaryText, size: 16),
+                        Icon(
+                          Icons.location_on_outlined,
+                          color: secondaryText,
+                          size: 16,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            _currentApplication.location.isNotEmpty ? _currentApplication.location : 'Location not specified',
-                            style: const TextStyle(color: secondaryText),
+                            _currentApplication.location.isNotEmpty
+                                ? _currentApplication.location
+                                : 'Location not specified',
+                            style: TextStyle(color: secondaryText),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(_currentApplication.status).withValues(alpha: 0.2),
+                        color: isDark
+                            ? statusColor.withValues(alpha: 0.2)
+                            : statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _getStatusColor(_currentApplication.status).withValues(alpha: 0.5)),
+                        border: Border.all(
+                          color: statusColor.withValues(
+                            alpha: isDark ? 0.5 : 0.3,
+                          ),
+                        ),
                       ),
                       child: Text(
                         _getStatusText(_currentApplication.status),
                         style: TextStyle(
-                          color: _getStatusColor(_currentApplication.status),
+                          color: statusColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -247,48 +323,73 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
                 title: 'Application Information',
                 surfaceColor: surfaceColor,
                 borderColor: borderColor,
-                primaryText: primaryText,
                 secondaryText: secondaryText,
                 children: [
-                  _buildInfoRow(Icons.calendar_today_outlined, 'Application Date', _formatDate(_currentApplication.applicationDate), primaryText, secondaryText),
+                  _buildInfoRow(
+                    Icons.calendar_today_outlined,
+                    'Application Date',
+                    _formatDate(_currentApplication.applicationDate),
+                    primaryText,
+                    secondaryText,
+                  ),
                   if (_currentApplication.interviewDate != null) ...[
                     const SizedBox(height: 16),
-                    _buildInfoRow(Icons.event_available_outlined, 'Interview Date', _formatDate(_currentApplication.interviewDate!), primaryText, secondaryText),
+                    _buildInfoRow(
+                      Icons.event_available_outlined,
+                      'Interview Date',
+                      _formatDate(_currentApplication.interviewDate!),
+                      primaryText,
+                      secondaryText,
+                    ),
                   ]
                 ],
               ),
               const SizedBox(height: 24),
 
               // Job Information
-              if (_currentApplication.jobUrl.isNotEmpty || _currentApplication.salary != null) ...[
+              if (_currentApplication.jobUrl.isNotEmpty ||
+                  _currentApplication.salary != null) ...[
                 _buildSectionCard(
                   title: 'Job Information',
                   surfaceColor: surfaceColor,
                   borderColor: borderColor,
-                  primaryText: primaryText,
                   secondaryText: secondaryText,
                   children: [
                     if (_currentApplication.salary != null)
-                      _buildInfoRow(Icons.attach_money_outlined, 'Salary', _currentApplication.salary!.toString(), primaryText, secondaryText),
-                    if (_currentApplication.jobUrl.isNotEmpty && _currentApplication.salary != null)
+                      _buildInfoRow(
+                        Icons.attach_money_outlined,
+                        'Salary',
+                        _currentApplication.salary!.toString(),
+                        primaryText,
+                        secondaryText,
+                      ),
+                    if (_currentApplication.jobUrl.isNotEmpty &&
+                        _currentApplication.salary != null)
                       const SizedBox(height: 16),
                     if (_currentApplication.jobUrl.isNotEmpty)
                       InkWell(
                         onTap: () => _launchUrl(_currentApplication.jobUrl),
                         borderRadius: BorderRadius.circular(8),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Row(
                             children: [
-                              Icon(Icons.link, color: violetAccent, size: 20),
-                              SizedBox(width: 12),
+                              Icon(Icons.link, color: secondaryAccent, size: 20),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   'Open Job Posting',
-                                  style: TextStyle(color: violetAccent, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: secondaryAccent,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              Icon(Icons.open_in_new, color: violetAccent, size: 16),
+                              Icon(
+                                Icons.open_in_new,
+                                color: secondaryAccent,
+                                size: 16,
+                              ),
                             ],
                           ),
                         ),
@@ -299,15 +400,21 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
               ],
 
               // Contact Information
-              if (_currentApplication.contactName != null && _currentApplication.contactName!.isNotEmpty) ...[
+              if (_currentApplication.contactName != null &&
+                  _currentApplication.contactName!.isNotEmpty) ...[
                 _buildSectionCard(
                   title: 'Contact Information',
                   surfaceColor: surfaceColor,
                   borderColor: borderColor,
-                  primaryText: primaryText,
                   secondaryText: secondaryText,
                   children: [
-                    _buildInfoRow(Icons.person_outline, 'Contact Person', _currentApplication.contactName!, primaryText, secondaryText),
+                    _buildInfoRow(
+                      Icons.person_outline,
+                      'Contact Person',
+                      _currentApplication.contactName!,
+                      primaryText,
+                      secondaryText,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -319,12 +426,11 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
                   title: 'Notes',
                   surfaceColor: surfaceColor,
                   borderColor: borderColor,
-                  primaryText: primaryText,
                   secondaryText: secondaryText,
                   children: [
                     Text(
                       _currentApplication.notes,
-                      style: const TextStyle(color: primaryText, height: 1.5),
+                      style: TextStyle(color: primaryText, height: 1.5),
                     ),
                   ],
                 ),
@@ -340,7 +446,6 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
     required String title,
     required Color surfaceColor,
     required Color borderColor,
-    required Color primaryText,
     required Color secondaryText,
     required List<Widget> children,
   }) {
@@ -369,7 +474,13 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, Color primaryText, Color secondaryText) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value,
+    Color primaryText,
+    Color secondaryText,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -386,7 +497,11 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
               const SizedBox(height: 2),
               Text(
                 value,
-                style: TextStyle(color: primaryText, fontSize: 16, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  color: primaryText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
