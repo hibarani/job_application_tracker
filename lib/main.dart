@@ -14,6 +14,6 @@ void main() async {
   } else if (themeModeString == 'dark') {
     initialThemeMode = ThemeMode.dark;
   }
-  
+
   runApp(App(initialThemeMode: initialThemeMode));
 }

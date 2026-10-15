@@ -28,6 +28,7 @@ class LocalStorageService {
     ];
 
     List<dynamic>? rawList;
+    bool needsMigration = false;
 
     // 1. First, check SharedPreferences candidate keys
     for (final key in candidateKeys) {
@@ -37,12 +38,18 @@ class LocalStorageService {
         final Object? rawVal = prefs.get(key);
         if (rawVal is String && rawVal.trim().isNotEmpty) {
           final decoded = jsonDecode(rawVal);
-          if (decoded is List && decoded.isNotEmpty) {
+          if (decoded is List) {
             rawList = decoded;
+            if (key != _primaryKey) {
+              needsMigration = true;
+            }
             break;
           }
-        } else if (rawVal is List && rawVal.isNotEmpty) {
+        } else if (rawVal is List) {
           rawList = rawVal;
+          if (key != _primaryKey) {
+            needsMigration = true;
+          }
           break;
         }
       } catch (e) {
@@ -52,18 +59,23 @@ class LocalStorageService {
       // Fallback check in case key was saved as a List<String>
       try {
         final List<String>? strList = prefs.getStringList(key);
-        if (strList != null && strList.isNotEmpty) {
+        if (strList != null) {
           rawList = strList;
+          if (key != _primaryKey) {
+            needsMigration = true;
+          }
           break;
         }
       } catch (e) {
-        debugPrint('Failed to read string list from SharedPreferences key $key: $e');
+        debugPrint(
+          'Failed to read string list from SharedPreferences key $key: $e',
+        );
       }
     }
 
     // 2. If SharedPreferences returned nothing (e.g. on Chrome Web if cache was unpopulated),
     // directly inspect browser window.localStorage for both prefixed and unprefixed keys
-    if (rawList == null || rawList.isEmpty) {
+    if (rawList == null) {
       final webCandidateKeys = [
         'flutter.$_primaryKey',
         _primaryKey,
@@ -78,13 +90,16 @@ class LocalStorageService {
           final String? rawStored = getBrowserLocalStorageItem(webKey);
           if (rawStored != null && rawStored.trim().isNotEmpty) {
             final decodedFirst = jsonDecode(rawStored);
-            if (decodedFirst is List && decodedFirst.isNotEmpty) {
+            if (decodedFirst is List) {
               rawList = decodedFirst;
+              needsMigration = true;
               break;
-            } else if (decodedFirst is String && decodedFirst.trim().isNotEmpty) {
+            } else if (decodedFirst is String &&
+                decodedFirst.trim().isNotEmpty) {
               final decodedSecond = jsonDecode(decodedFirst);
-              if (decodedSecond is List && decodedSecond.isNotEmpty) {
+              if (decodedSecond is List) {
                 rawList = decodedSecond;
+                needsMigration = true;
                 break;
               }
             }
@@ -128,8 +143,8 @@ class LocalStorageService {
       }
     }
 
-    // Auto-migrate to canonical keys in both SharedPreferences and browser storage
-    if (parsedApplications.isNotEmpty) {
+    // Auto-migrate to canonical keys in both SharedPreferences and browser storage ONLY when migrating
+    if (needsMigration && parsedApplications.isNotEmpty) {
       try {
         await saveApplications(parsedApplications);
       } catch (e) {
@@ -145,7 +160,7 @@ class LocalStorageService {
   /// Throws an exception if writing fails so callers can report real errors.
   Future<void> saveApplications(List<JobApplication> applications) async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     final List<Map<String, dynamic>> jsonList = applications
         .map((app) => app.toJson())
         .toList();
@@ -158,8 +173,14 @@ class LocalStorageService {
     // 2. Direct browser localStorage persistence for Chrome Web
     try {
       // Standard SharedPreferences Web format (JSON encoded string)
-      setBrowserLocalStorageItem('flutter.$_primaryKey', jsonEncode(jsonString));
-      setBrowserLocalStorageItem('flutter.$_applicationsDataKey', jsonEncode(jsonString));
+      setBrowserLocalStorageItem(
+        'flutter.$_primaryKey',
+        jsonEncode(jsonString),
+      );
+      setBrowserLocalStorageItem(
+        'flutter.$_applicationsDataKey',
+        jsonEncode(jsonString),
+      );
       // Direct raw JSON format for resilience
       setBrowserLocalStorageItem(_primaryKey, jsonString);
       setBrowserLocalStorageItem(_applicationsDataKey, jsonString);
@@ -211,7 +232,8 @@ class LocalStorageService {
     }
 
     // Fallback to browser localStorage
-    final webVal = getBrowserLocalStorageItem('flutter.$_themeModeKey') ??
+    final webVal =
+        getBrowserLocalStorageItem('flutter.$_themeModeKey') ??
         getBrowserLocalStorageItem(_themeModeKey);
     if (webVal != null && webVal.isNotEmpty) {
       try {

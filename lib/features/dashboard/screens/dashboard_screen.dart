@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:job_application_tracker/app/theme/app_theme.dart';
 import 'package:job_application_tracker/features/applications/models/job_application.dart';
+import 'package:job_application_tracker/features/applications/screens/application_details_screen.dart';
 import 'package:job_application_tracker/services/storage/local_storage_service.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -130,7 +132,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildStatsSection(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Row(
@@ -140,7 +141,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Total',
                 value: _total.toString(),
                 icon: Icons.work_outline,
-                color: colorScheme.primary, // Orange
+                color: colorScheme.primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -149,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Interviews',
                 value: _interviews.toString(),
                 icon: Icons.forum_outlined,
-                color: colorScheme.tertiary, // Amber
+                color: colorScheme.tertiary,
               ),
             ),
           ],
@@ -162,7 +163,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Applied',
                 value: _applied.toString(),
                 icon: Icons.send_outlined,
-                color: colorScheme.secondary, // Violet
+                color: colorScheme.secondary,
               ),
             ),
             const SizedBox(width: 12),
@@ -171,9 +172,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Offers',
                 value: _offers.toString(),
                 icon: Icons.emoji_events_outlined,
-                color: isDark
-                    ? const Color(0xFF4CAF50)
-                    : Colors.green, // Dark green
+                color: AppTheme.getStatusColor(
+                  context,
+                  ApplicationStatus.offer,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -182,9 +184,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Rejected',
                 value: _rejected.toString(),
                 icon: Icons.cancel_outlined,
-                color: isDark
-                    ? const Color(0xFFD32F2F)
-                    : Colors.red, // Dark muted red
+                color: AppTheme.getStatusColor(
+                  context,
+                  ApplicationStatus.rejected,
+                ),
               ),
             ),
           ],
@@ -252,7 +255,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final app = recentApps[index];
-        return _ApplicationTile(application: app);
+        return _ApplicationTile(
+          application: app,
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    ApplicationDetailsScreen(application: app),
+              ),
+            );
+            _loadData();
+          },
+        );
       },
     );
   }
@@ -314,16 +329,22 @@ class _StatCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w500,
@@ -337,138 +358,128 @@ class _StatCard extends StatelessWidget {
 
 class _ApplicationTile extends StatelessWidget {
   final JobApplication application;
+  final VoidCallback onTap;
 
-  const _ApplicationTile({required this.application});
-
-  Color _getStatusColor(BuildContext context, ApplicationStatus status) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    switch (status) {
-      case ApplicationStatus.applied:
-        return colorScheme.secondary; // violet
-      case ApplicationStatus.screening:
-        return colorScheme.tertiary; // amber
-      case ApplicationStatus.interview:
-        return colorScheme.primary; // coral
-      case ApplicationStatus.offer:
-        return isDark ? const Color(0xFF4CAF50) : Colors.green;
-      case ApplicationStatus.rejected:
-        return isDark ? const Color(0xFFD32F2F) : Colors.red;
-    }
-  }
-
-  String _getStatusText(ApplicationStatus status) {
-    final text = status.name;
-    return text[0].toUpperCase() + text.substring(1);
-  }
+  const _ApplicationTile({required this.application, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final statusColor = _getStatusColor(context, application.status);
+    final statusColor = AppTheme.getStatusColor(context, application.status);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? colorScheme.outlineVariant
-              : colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? colorScheme.outlineVariant
+                  : colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
-            alignment: Alignment.center,
-            child: Text(
-              application.companyName.isNotEmpty
-                  ? application.companyName[0].toUpperCase()
-                  : '?',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurfaceVariant,
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.shadow.withValues(alpha: 0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  application.jobTitle,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  application.companyName.isNotEmpty
+                      ? application.companyName[0].toUpperCase()
+                      : '?',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  application.companyName,
-                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
-                Row(
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      size: 14,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 4),
                     Text(
-                      '${application.applicationDate.month}/${application.applicationDate.day}/${application.applicationDate.year}',
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      application.jobTitle,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      application.companyName,
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 14,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${application.applicationDate.month}/${application.applicationDate.day}/${application.applicationDate.year}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? statusColor.withValues(alpha: 0.2)
-                  : statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-            ),
-            child: Text(
-              _getStatusText(application.status),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: isDark ? colorScheme.onSurface : statusColor,
-                fontWeight: FontWeight.bold,
               ),
-            ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? statusColor.withValues(alpha: 0.2)
+                      : statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  application.status.displayName,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: isDark ? colorScheme.onSurface : statusColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

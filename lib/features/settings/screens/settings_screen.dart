@@ -32,7 +32,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Appearance Section
               Text(
                 'Appearance',
@@ -44,7 +44,7 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               _buildAppearanceCard(context, appState),
               const SizedBox(height: 32),
-              
+
               // Data Section
               Text(
                 'Data',
@@ -81,7 +81,9 @@ class SettingsScreen extends StatelessWidget {
       color: colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         children: [
@@ -94,21 +96,27 @@ class SettingsScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                // If the screen is very small, we could adjust the UI, 
+                // If the screen is very small, we could adjust the UI,
                 // but SegmentedButton usually handles resizing ok.
                 return SizedBox(
                   width: double.infinity,
                   child: SegmentedButton<ThemeMode>(
                     segments: const [
-                      ButtonSegment(value: ThemeMode.system, label: Text('System')),
-                      ButtonSegment(value: ThemeMode.light, label: Text('Light')),
+                      ButtonSegment(
+                        value: ThemeMode.system,
+                        label: Text('System'),
+                      ),
+                      ButtonSegment(
+                        value: ThemeMode.light,
+                        label: Text('Light'),
+                      ),
                       ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
                     ],
                     selected: <ThemeMode>{
                       (appState.themeMode as ThemeMode?) ??
                           (Theme.of(context).brightness == Brightness.light
                               ? ThemeMode.light
-                              : ThemeMode.dark)
+                              : ThemeMode.dark),
                     },
                     onSelectionChanged: (Set<ThemeMode> newSelection) async {
                       final mode = newSelection.first;
@@ -124,7 +132,7 @@ class SettingsScreen extends StatelessWidget {
                     },
                   ),
                 );
-              }
+              },
             ),
           ),
         ],
@@ -139,11 +147,16 @@ class SettingsScreen extends StatelessWidget {
       color: colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       child: ListTile(
         leading: Icon(Icons.delete_forever, color: colorScheme.error),
-        title: Text('Reset Local Data', style: TextStyle(color: colorScheme.error)),
+        title: Text(
+          'Reset Local Data',
+          style: TextStyle(color: colorScheme.error),
+        ),
         subtitle: const Text('Permanently remove all saved job applications.'),
         onTap: () => _showResetConfirmation(context),
       ),
@@ -183,7 +196,9 @@ class SettingsScreen extends StatelessWidget {
       await storage.deleteAllApplications();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All local data has been successfully reset.')),
+          const SnackBar(
+            content: Text('All local data has been successfully reset.'),
+          ),
         );
       }
     }
@@ -196,7 +211,9 @@ class SettingsScreen extends StatelessWidget {
       color: colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       child: ListTile(
         leading: const Icon(Icons.info_outline),
@@ -218,11 +235,18 @@ class SettingsScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('A simple, beautiful tool to help you organize and track your job search progress.'),
+                    Text(
+                      'A simple, beautiful tool to help you organize and track your job search progress.',
+                    ),
                     SizedBox(height: 16),
-                    Text('Built with Flutter & Dart.', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      'Built with Flutter & Dart.',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     SizedBox(height: 8),
-                    Text('No backend, no tracking. All data lives on your local device.'),
+                    Text(
+                      'No backend, no tracking. All data lives on your local device.',
+                    ),
                   ],
                 ),
                 actions: [

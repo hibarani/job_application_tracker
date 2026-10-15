@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:job_application_tracker/features/applications/models/job_application.dart';
 
 /// Centralized application theme definitions for Material 3.
 class AppTheme {
@@ -18,14 +19,42 @@ class AppTheme {
 
   static const double borderRadius = 16.0;
 
-  /// Light theme definition.
+  /// Centralized status color helper ensuring complete visual consistency across screens.
+  static Color getStatusColor(BuildContext context, ApplicationStatus status) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    switch (status) {
+      case ApplicationStatus.applied:
+        return colorScheme.secondary;
+      case ApplicationStatus.screening:
+        return colorScheme.tertiary;
+      case ApplicationStatus.interview:
+        return colorScheme.primary;
+      case ApplicationStatus.offer:
+        return isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
+      case ApplicationStatus.rejected:
+        return isDark ? const Color(0xFFE57373) : colorScheme.error;
+    }
+  }
+
+  /// Light theme definition adhering to the indigo/orange professional identity.
   static ThemeData get lightTheme {
+    final lightBase = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF3B3475),
+      brightness: Brightness.light,
+      surface: const Color(0xFFF8F9FC),
+      onSurface: const Color(0xFF1A1C24),
+    );
     return _buildTheme(
-      ColorScheme.fromSeed(
-        seedColor: const Color(0xFF2563EB),
-        brightness: Brightness.light,
-        surface: const Color(0xFFF9FAFB),
-        onSurface: const Color(0xFF1F2937),
+      lightBase.copyWith(
+        primary: const Color(0xFFD85A30), // Warm terracotta orange
+        secondary: const Color(0xFF4F46E5), // Deep indigo
+        tertiary: const Color(0xFFD97706), // Amber
+        surfaceContainerHighest: const Color(0xFFFFFFFF),
+        onSurfaceVariant: const Color(0xFF5B6170),
+        outlineVariant: const Color(0xFFE5E7EB),
+        outline: const Color(0xFFD1D5DB),
+        surfaceContainer: const Color(0xFFFFFFFF),
       ),
     );
   }

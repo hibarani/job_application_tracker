@@ -110,11 +110,6 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
     }
   }
 
-  String _getStatusText(ApplicationStatus status) {
-    final text = status.name;
-    return text[0].toUpperCase() + text.substring(1);
-  }
-
   Future<void> _saveApplication() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -137,7 +132,9 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
       }
 
       final newApp = JobApplication(
-        id: widget.application?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        id:
+            widget.application?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         companyName: _companyController.text.trim(),
         jobTitle: _jobTitleController.text.trim(),
         location: _locationController.text.trim(),
@@ -152,7 +149,9 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
       );
 
       if (widget.application != null) {
-        final index = existingApps.indexWhere((a) => a.id == widget.application!.id);
+        final index = existingApps.indexWhere(
+          (a) => a.id == widget.application!.id,
+        );
         if (index != -1) {
           existingApps[index] = newApp;
         } else {
@@ -171,7 +170,7 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Could not save the application: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -347,7 +346,7 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
                               items: ApplicationStatus.values.map((status) {
                                 return DropdownMenuItem(
                                   value: status,
-                                  child: Text(_getStatusText(status)),
+                                  child: Text(status.displayName),
                                 );
                               }).toList(),
                               onChanged: (value) {
@@ -484,7 +483,9 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
                             ),
                           )
                         : Text(
-                            widget.application != null ? 'Update Application' : 'Save Application',
+                            widget.application != null
+                                ? 'Update Application'
+                                : 'Save Application',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,

@@ -53,43 +53,46 @@ void main() {
       expect(item.interviewDate, isNotNull);
     });
 
-    test('Adding and editing applications updates persistent storage', () async {
-      final app1 = JobApplication(
-        id: '1',
-        companyName: 'Company A',
-        jobTitle: 'Engineer',
-        location: 'NY',
-        applicationDate: DateTime.now(),
-        status: ApplicationStatus.applied,
-        jobUrl: '',
-      );
-      await storage.saveApplications([app1]);
+    test(
+      'Adding and editing applications updates persistent storage',
+      () async {
+        final app1 = JobApplication(
+          id: '1',
+          companyName: 'Company A',
+          jobTitle: 'Engineer',
+          location: 'NY',
+          applicationDate: DateTime.now(),
+          status: ApplicationStatus.applied,
+          jobUrl: '',
+        );
+        await storage.saveApplications([app1]);
 
-      // Edit app1
-      final updatedApp1 = app1.copyWith(
-        jobTitle: 'Lead Engineer',
-        status: ApplicationStatus.offer,
-        isFavorite: true,
-      );
-      final app2 = JobApplication(
-        id: '2',
-        companyName: 'Company B',
-        jobTitle: 'Designer',
-        location: 'SF',
-        applicationDate: DateTime.now(),
-        status: ApplicationStatus.applied,
-        jobUrl: '',
-      );
+        // Edit app1
+        final updatedApp1 = app1.copyWith(
+          jobTitle: 'Lead Engineer',
+          status: ApplicationStatus.offer,
+          isFavorite: true,
+        );
+        final app2 = JobApplication(
+          id: '2',
+          companyName: 'Company B',
+          jobTitle: 'Designer',
+          location: 'SF',
+          applicationDate: DateTime.now(),
+          status: ApplicationStatus.applied,
+          jobUrl: '',
+        );
 
-      await storage.saveApplications([updatedApp1, app2]);
+        await storage.saveApplications([updatedApp1, app2]);
 
-      final loaded = await storage.loadApplications();
-      expect(loaded.length, 2);
-      expect(loaded[0].jobTitle, 'Lead Engineer');
-      expect(loaded[0].status, ApplicationStatus.offer);
-      expect(loaded[0].isFavorite, isTrue);
-      expect(loaded[1].companyName, 'Company B');
-    });
+        final loaded = await storage.loadApplications();
+        expect(loaded.length, 2);
+        expect(loaded[0].jobTitle, 'Lead Engineer');
+        expect(loaded[0].status, ApplicationStatus.offer);
+        expect(loaded[0].isFavorite, isTrue);
+        expect(loaded[1].companyName, 'Company B');
+      },
+    );
 
     test('Deleting an application persists the updated list', () async {
       final app1 = JobApplication(
@@ -174,35 +177,38 @@ void main() {
       expect(loaded.first.isFavorite, isTrue);
     });
 
-    test('Handles resilient parsing of corrupted and varied field types', () async {
-      final mixedData = [
-        {
-          'id': 'mixed_1',
-          'companyName': 'Robust Corp',
-          'jobTitle': 'QA',
-          'salary': '\$110,000.50', // String formatted currency
-          'status': 'UNKNOWN_STATUS', // Unknown status
-          'isFavorite': 'true', // String boolean
-        },
-        {
-          // Completely minimal entry
-          'companyName': 'Minimal Inc',
-        },
-      ];
+    test(
+      'Handles resilient parsing of corrupted and varied field types',
+      () async {
+        final mixedData = [
+          {
+            'id': 'mixed_1',
+            'companyName': 'Robust Corp',
+            'jobTitle': 'QA',
+            'salary': '\$110,000.50', // String formatted currency
+            'status': 'UNKNOWN_STATUS', // Unknown status
+            'isFavorite': 'true', // String boolean
+          },
+          {
+            // Completely minimal entry
+            'companyName': 'Minimal Inc',
+          },
+        ];
 
-      SharedPreferences.setMockInitialValues({
-        'job_applications': jsonEncode(mixedData),
-      });
+        SharedPreferences.setMockInitialValues({
+          'job_applications': jsonEncode(mixedData),
+        });
 
-      final loaded = await storage.loadApplications();
-      expect(loaded.length, 2);
-      expect(loaded[0].id, 'mixed_1');
-      expect(loaded[0].salary, 110000.50);
-      expect(loaded[0].status, ApplicationStatus.applied);
-      expect(loaded[0].isFavorite, isTrue);
-      expect(loaded[1].companyName, 'Minimal Inc');
-      expect(loaded[1].id, isNotEmpty);
-    });
+        final loaded = await storage.loadApplications();
+        expect(loaded.length, 2);
+        expect(loaded[0].id, 'mixed_1');
+        expect(loaded[0].salary, 110000.50);
+        expect(loaded[0].status, ApplicationStatus.applied);
+        expect(loaded[0].isFavorite, isTrue);
+        expect(loaded[1].companyName, 'Minimal Inc');
+        expect(loaded[1].id, isNotEmpty);
+      },
+    );
 
     test('Theme mode persistence works properly', () async {
       expect(await storage.loadThemeMode(), isNull);
@@ -222,12 +228,59 @@ void main() {
           applicationDate: DateTime.now(),
           status: ApplicationStatus.applied,
           jobUrl: '',
-        )
+        ),
       ]);
       expect((await storage.loadApplications()).length, 1);
 
       await storage.deleteAllApplications();
       expect((await storage.loadApplications()), isEmpty);
     });
+
+    test(
+      'Regression: empty primary list [] does not resurrect stale legacy keys',
+      () async {
+        // Setup: primary key is explicitly an empty list, but legacy key has stale data
+        final staleLegacyApp = {
+          'id': 'stale_1',
+          'companyName': 'Old Stale Corp',
+          'jobTitle': 'Stale Job',
+          'location': 'Nowhere',
+          'applicationDate': DateTime.now().toIso8601String(),
+          'status': 'applied',
+          'jobUrl': '',
+        };
+
+        SharedPreferences.setMockInitialValues({
+          'job_applications': jsonEncode([]),
+          'job_applications_data': jsonEncode([staleLegacyApp]),
+        });
+
+        final loaded = await storage.loadApplications();
+        // Must NOT restore staleLegacyApp because primary key was explicitly empty
+        expect(loaded, isEmpty);
+      },
+    );
+
+    test(
+      'Regression: deleting the last remaining application leaves storage cleanly empty',
+      () async {
+        final app = JobApplication(
+          id: 'sole_app',
+          companyName: 'Sole Company',
+          jobTitle: 'Sole Role',
+          location: 'Remote',
+          applicationDate: DateTime.now(),
+          status: ApplicationStatus.applied,
+          jobUrl: '',
+        );
+
+        await storage.saveApplications([app]);
+        expect((await storage.loadApplications()).length, 1);
+
+        await storage.deleteApplication('sole_app');
+        final loaded = await storage.loadApplications();
+        expect(loaded, isEmpty);
+      },
+    );
   });
 }

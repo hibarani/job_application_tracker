@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:job_application_tracker/app/theme/app_theme.dart';
 import 'package:job_application_tracker/features/applications/models/job_application.dart';
 import 'package:job_application_tracker/features/applications/screens/add_application_screen.dart';
 import 'package:job_application_tracker/features/applications/screens/application_details_screen.dart';
@@ -163,8 +164,11 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                       child: _applications.isEmpty
                           ? _buildEmptyState(context)
                           : _filteredApplications.isEmpty
-                              ? _buildEmptySearchState(context)
-                              : _buildApplicationsList(context, _filteredApplications),
+                          ? _buildEmptySearchState(context)
+                          : _buildApplicationsList(
+                              context,
+                              _filteredApplications,
+                            ),
                     ),
                   ),
                 ],
@@ -193,11 +197,6 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
     );
   }
 
-  String _getStatusText(ApplicationStatus status) {
-    final text = status.name;
-    return text[0].toUpperCase() + text.substring(1);
-  }
-
   Widget _buildFiltersAndSort(BuildContext context) {
     return Row(
       children: [
@@ -213,7 +212,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                 ...ApplicationStatus.values.map((status) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8.0),
-                    child: _buildFilterChip(status, _getStatusText(status)),
+                    child: _buildFilterChip(status, status.displayName),
                   );
                 }),
               ],
@@ -231,14 +230,8 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
             });
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: true,
-              child: Text('Newest First'),
-            ),
-            const PopupMenuItem(
-              value: false,
-              child: Text('Oldest First'),
-            ),
+            const PopupMenuItem(value: true, child: Text('Newest First')),
+            const PopupMenuItem(value: false, child: Text('Oldest First')),
           ],
         ),
       ],
@@ -278,7 +271,9 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
       avatar: Icon(
         _filterFavorites ? Icons.favorite : Icons.favorite_border,
         size: 18,
-        color: _filterFavorites ? colorScheme.primary : colorScheme.onSurfaceVariant,
+        color: _filterFavorites
+            ? colorScheme.primary
+            : colorScheme.onSurfaceVariant,
       ),
       selected: _filterFavorites,
       onSelected: (selected) {
@@ -291,11 +286,15 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
       checkmarkColor: colorScheme.primary,
       showCheckmark: false,
       labelStyle: TextStyle(
-        color: _filterFavorites ? colorScheme.primary : colorScheme.onSurfaceVariant,
+        color: _filterFavorites
+            ? colorScheme.primary
+            : colorScheme.onSurfaceVariant,
         fontWeight: _filterFavorites ? FontWeight.bold : FontWeight.normal,
       ),
       side: BorderSide(
-        color: _filterFavorites ? colorScheme.primary : colorScheme.outlineVariant,
+        color: _filterFavorites
+            ? colorScheme.primary
+            : colorScheme.outlineVariant,
       ),
     );
   }
@@ -303,7 +302,9 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
   Widget _buildEmptySearchState(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (_filterFavorites && _searchQuery.trim().isEmpty && _selectedStatus == null) {
+    if (_filterFavorites &&
+        _searchQuery.trim().isEmpty &&
+        _selectedStatus == null) {
       return Center(
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -311,16 +312,24 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.favorite_border, size: 64, color: colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.favorite_border,
+                size: 64,
+                color: colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(height: 16),
               Text(
                 'No favorite applications',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
                 'Mark applications as favorites to find them quickly here.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -336,16 +345,24 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(height: 16),
             Text(
               'No matching applications',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               'Try changing your search or filters.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 24),
             TextButton.icon(
@@ -433,7 +450,10 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
     );
   }
 
-  Widget _buildApplicationsList(BuildContext context, List<JobApplication> apps) {
+  Widget _buildApplicationsList(
+    BuildContext context,
+    List<JobApplication> apps,
+  ) {
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(left: 20, right: 20, top: 8, bottom: 80),
@@ -441,10 +461,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final app = apps[index];
-        return _ApplicationListCard(
-          application: app,
-          onUpdate: _loadData,
-        );
+        return _ApplicationListCard(application: app, onUpdate: _loadData);
       },
     );
   }
@@ -459,33 +476,11 @@ class _ApplicationListCard extends StatelessWidget {
     required this.onUpdate,
   });
 
-  Color _getStatusColor(BuildContext context, ApplicationStatus status) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    switch (status) {
-      case ApplicationStatus.applied:
-        return colorScheme.secondary;
-      case ApplicationStatus.screening:
-        return colorScheme.tertiary;
-      case ApplicationStatus.interview:
-        return colorScheme.primary;
-      case ApplicationStatus.offer:
-        return isDark ? const Color(0xFF4CAF50) : Colors.green;
-      case ApplicationStatus.rejected:
-        return isDark ? const Color(0xFFD32F2F) : Colors.red;
-    }
-  }
-
-  String _getStatusText(ApplicationStatus status) {
-    final text = status.name;
-    return text[0].toUpperCase() + text.substring(1);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final statusColor = _getStatusColor(context, application.status);
+    final statusColor = AppTheme.getStatusColor(context, application.status);
     final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
@@ -493,7 +488,8 @@ class _ApplicationListCard extends StatelessWidget {
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ApplicationDetailsScreen(application: application),
+            builder: (context) =>
+                ApplicationDetailsScreen(application: application),
           ),
         );
         onUpdate();
@@ -512,212 +508,229 @@ class _ApplicationListCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  application.companyName.isNotEmpty
-                      ? application.companyName[0].toUpperCase()
-                      : '?',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurfaceVariant,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    application.companyName.isNotEmpty
+                        ? application.companyName[0].toUpperCase()
+                        : '?',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      application.jobTitle,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        application.jobTitle,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      application.companyName,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(height: 4),
+                      Text(
+                        application.companyName,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? statusColor.withValues(alpha: 0.2)
-                      : statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  _getStatusText(application.status),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: isDark ? colorScheme.onSurface : statusColor,
-                    fontWeight: FontWeight.bold,
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: Icon(
-                  application.isFavorite ? Icons.favorite : Icons.favorite_border,
-                  size: 20,
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? statusColor.withValues(alpha: 0.2)
+                        : statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    application.status.displayName,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: isDark ? colorScheme.onSurface : statusColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                color: application.isFavorite ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                onPressed: () async {
-                  try {
-                    final storageService = LocalStorageService();
-                    final updatedApp = application.copyWith(isFavorite: !application.isFavorite);
-                    final apps = await storageService.loadApplications();
-                    final index = apps.indexWhere((a) => a.id == updatedApp.id);
-                    if (index != -1) {
-                      apps[index] = updatedApp;
-                      await storageService.saveApplications(apps);
-                      onUpdate();
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Failed to update favorite: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 20),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                color: colorScheme.onSurfaceVariant,
-                tooltip: 'Edit Application',
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddApplicationScreen(application: application),
-                    ),
-                  );
-                  if (result == true) {
-                    onUpdate();
-                  }
-                },
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: Icon(Icons.delete_outline, size: 20, color: colorScheme.error),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                tooltip: 'Delete Application',
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Delete Application?'),
-                      content: Text('Are you sure you want to delete "${application.jobTitle}" at "${application.companyName}"?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Cancel'),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: colorScheme.error,
-                            foregroundColor: colorScheme.onError,
-                          ),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Delete'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm == true) {
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(
+                    application.isFavorite
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    size: 20,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  color: application.isFavorite
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  onPressed: () async {
                     try {
                       final storageService = LocalStorageService();
-                      await storageService.deleteApplication(application.id);
-                      onUpdate();
+                      final updatedApp = application.copyWith(
+                        isFavorite: !application.isFavorite,
+                      );
+                      final apps = await storageService.loadApplications();
+                      final index = apps.indexWhere(
+                        (a) => a.id == updatedApp.id,
+                      );
+                      if (index != -1) {
+                        apps[index] = updatedApp;
+                        await storageService.saveApplications(apps);
+                        onUpdate();
+                      }
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Failed to delete application: $e'),
-                            backgroundColor: Colors.red,
+                            content: Text('Failed to update favorite: $e'),
+                            backgroundColor: colorScheme.error,
                           ),
                         );
                       }
                     }
-                  }
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Icon(
-                Icons.location_on_outlined,
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  application.location.isNotEmpty
-                      ? application.location
-                      : 'Not specified',
+                  },
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  color: colorScheme.onSurfaceVariant,
+                  tooltip: 'Edit Application',
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            AddApplicationScreen(application: application),
+                      ),
+                    );
+                    if (result == true) {
+                      onUpdate();
+                    }
+                  },
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 20,
+                    color: colorScheme.error,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Delete Application',
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Application?'),
+                        content: Text(
+                          'Are you sure you want to delete "${application.jobTitle}" at "${application.companyName}"?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorScheme.error,
+                              foregroundColor: colorScheme.onError,
+                            ),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      try {
+                        final storageService = LocalStorageService();
+                        await storageService.deleteApplication(application.id);
+                        onUpdate();
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to delete application: $e'),
+                              backgroundColor: colorScheme.error,
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    application.location.isNotEmpty
+                        ? application.location
+                        : 'Not specified',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${application.applicationDate.month}/${application.applicationDate.day}/${application.applicationDate.year}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Icon(
-                Icons.calendar_today_outlined,
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${application.applicationDate.month}/${application.applicationDate.day}/${application.applicationDate.year}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

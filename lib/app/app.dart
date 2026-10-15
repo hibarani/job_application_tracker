@@ -7,7 +7,7 @@ import 'package:job_application_tracker/features/statistics/screens/statistics_s
 
 class App extends StatefulWidget {
   final ThemeMode initialThemeMode;
-  
+
   const App({super.key, required this.initialThemeMode});
 
   @override
@@ -54,7 +54,6 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-
   void _onDestinationSelected(int index) {
     setState(() {
       _selectedIndex = index;
@@ -65,7 +64,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _selectedIndex, 
+        index: _selectedIndex,
         children: [
           DashboardScreen(isActive: _selectedIndex == 0),
           ApplicationsScreen(isActive: _selectedIndex == 1),

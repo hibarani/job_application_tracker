@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:job_application_tracker/app/theme/app_theme.dart';
 import 'package:job_application_tracker/features/applications/models/job_application.dart';
 import 'package:job_application_tracker/features/applications/screens/add_application_screen.dart';
 import 'package:job_application_tracker/services/storage/local_storage_service.dart';
@@ -41,36 +42,40 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
-  Color _getStatusColor(BuildContext context, ApplicationStatus status) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    switch (status) {
-      case ApplicationStatus.applied:
-        return colorScheme.secondary;
-      case ApplicationStatus.screening:
-        return colorScheme.tertiary;
-      case ApplicationStatus.interview:
-        return colorScheme.primary;
-      case ApplicationStatus.offer:
-        return isDark ? const Color(0xFF4CAF50) : Colors.green;
-      case ApplicationStatus.rejected:
-        return isDark ? const Color(0xFFD32F2F) : colorScheme.error;
-    }
-  }
-
-  String _getStatusText(ApplicationStatus status) {
-    final text = status.name;
-    return text[0].toUpperCase() + text.substring(1);
+  String _formatSalary(double salary) {
+    final clean = salary % 1 == 0
+        ? salary.toInt().toString()
+        : salary.toStringAsFixed(2);
+    final parts = clean.split('.');
+    final reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    final formattedInt = parts[0].replaceAllMapped(
+      reg,
+      (Match m) => '${m[1]},',
+    );
+    return parts.length > 1 ? '\$$formattedInt.${parts[1]}' : '\$$formattedInt';
   }
 
   Future<void> _launchUrl(String urlString) async {
     try {
-      final uri = Uri.parse(urlString);
+      String formatted = urlString.trim();
+      if (!formatted.startsWith('http://') &&
+          !formatted.startsWith('https://')) {
+        formatted = 'https://$formatted';
+      }
+      final uri = Uri.parse(formatted);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open the job link.')),
+        );
       }
     } catch (e) {
-      // Ignore if URL is invalid
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Invalid job URL: $urlString')));
+      }
     }
   }
 
@@ -101,7 +106,7 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to refresh application: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -131,7 +136,7 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update favorite: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -177,7 +182,7 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to delete application: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: colorScheme.error,
             ),
           );
         }
@@ -199,7 +204,10 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
     final secondaryAccent = colorScheme.secondary;
     final primaryText = colorScheme.onSurface;
     final secondaryText = colorScheme.onSurfaceVariant;
-    final statusColor = _getStatusColor(context, _currentApplication.status);
+    final statusColor = AppTheme.getStatusColor(
+      context,
+      _currentApplication.status,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -226,10 +234,7 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
             onPressed: _toggleFavorite,
           ),
           IconButton(
-            icon: Icon(
-              Icons.delete_outline,
-              color: colorScheme.error,
-            ),
+            icon: Icon(Icons.delete_outline, color: colorScheme.error),
             tooltip: 'Delete Application',
             onPressed: _deleteApplication,
           ),
@@ -306,7 +311,7 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
                         ),
                       ),
                       child: Text(
-                        _getStatusText(_currentApplication.status),
+                        _currentApplication.status.displayName,
                         style: TextStyle(
                           color: statusColor,
                           fontWeight: FontWeight.bold,
@@ -341,7 +346,7 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
                       primaryText,
                       secondaryText,
                     ),
-                  ]
+                  ],
                 ],
               ),
               const SizedBox(height: 24),
@@ -359,7 +364,7 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
                       _buildInfoRow(
                         Icons.attach_money_outlined,
                         'Salary',
-                        _currentApplication.salary!.toString(),
+                        _formatSalary(_currentApplication.salary!),
                         primaryText,
                         secondaryText,
                       ),
@@ -374,7 +379,11 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Row(
                             children: [
-                              Icon(Icons.link, color: secondaryAccent, size: 20),
+                              Icon(
+                                Icons.link,
+                                color: secondaryAccent,
+                                size: 20,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
@@ -490,10 +499,7 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: TextStyle(color: secondaryText, fontSize: 12),
-              ),
+              Text(label, style: TextStyle(color: secondaryText, fontSize: 12)),
               const SizedBox(height: 2),
               Text(
                 value,

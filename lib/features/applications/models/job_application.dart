@@ -1,5 +1,22 @@
 enum ApplicationStatus { applied, screening, interview, offer, rejected }
 
+extension ApplicationStatusX on ApplicationStatus {
+  String get displayName {
+    switch (this) {
+      case ApplicationStatus.applied:
+        return 'Applied';
+      case ApplicationStatus.screening:
+        return 'Screening';
+      case ApplicationStatus.interview:
+        return 'Interview';
+      case ApplicationStatus.offer:
+        return 'Offer';
+      case ApplicationStatus.rejected:
+        return 'Rejected';
+    }
+  }
+}
+
 class JobApplication {
   final String id;
   final String companyName;

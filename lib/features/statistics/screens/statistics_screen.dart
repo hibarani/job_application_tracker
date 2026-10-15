@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:job_application_tracker/app/theme/app_theme.dart';
 import 'package:job_application_tracker/features/applications/models/job_application.dart';
 import 'package:job_application_tracker/services/storage/local_storage_service.dart';
 
@@ -47,7 +48,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Map<ApplicationStatus, int> get _statusCounts {
     final counts = <ApplicationStatus, int>{
-      for (var status in ApplicationStatus.values) status: 0
+      for (var status in ApplicationStatus.values) status: 0,
     };
     for (var app in _applications) {
       counts[app.status] = (counts[app.status] ?? 0) + 1;
@@ -55,29 +56,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return counts;
   }
 
-  int get _favoritesCount => _applications.where((app) => app.isFavorite).length;
+  int get _favoritesCount =>
+      _applications.where((app) => app.isFavorite).length;
 
-  int get _activeCount => _applications.where((app) => app.status != ApplicationStatus.rejected).length;
-
-  Color _getStatusColor(ApplicationStatus status) {
-    switch (status) {
-      case ApplicationStatus.applied:
-        return const Color(0xFF03DAC6);
-      case ApplicationStatus.screening:
-        return const Color(0xFFFFB74D);
-      case ApplicationStatus.interview:
-        return const Color(0xFF8175D6);
-      case ApplicationStatus.offer:
-        return const Color(0xFF4CAF50);
-      case ApplicationStatus.rejected:
-        return const Color(0xFFD32F2F);
-    }
-  }
-
-  String _getStatusText(ApplicationStatus status) {
-    final text = status.name;
-    return text[0].toUpperCase() + text.substring(1);
-  }
+  int get _activeCount => _applications
+      .where((app) => app.status != ApplicationStatus.rejected)
+      .length;
 
   @override
   Widget build(BuildContext context) {
@@ -154,21 +138,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               'Favorites',
               _favoritesCount.toString(),
               Icons.favorite,
-              const Color(0xFFFF8A65), // Coral/orange
+              Theme.of(context).colorScheme.primary,
             ),
             _buildStatCard(
               context,
               'Interviews',
               _statusCounts[ApplicationStatus.interview].toString(),
               Icons.event_available,
-              _getStatusColor(ApplicationStatus.interview),
+              AppTheme.getStatusColor(context, ApplicationStatus.interview),
             ),
             _buildStatCard(
               context,
               'Offers',
               _statusCounts[ApplicationStatus.offer].toString(),
               Icons.star,
-              _getStatusColor(ApplicationStatus.offer),
+              AppTheme.getStatusColor(context, ApplicationStatus.offer),
             ),
           ],
         );
@@ -184,7 +168,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     Color color,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -209,15 +193,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                value,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
               ),
               Text(
                 title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
@@ -233,9 +223,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildInsights(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
-    final mostCommonEntry = _statusCounts.entries.reduce((a, b) => a.value > b.value ? a : b);
-    final mostCommonStatusText = mostCommonEntry.value > 0 ? _getStatusText(mostCommonEntry.key) : 'None';
+
+    final mostCommonEntry = _statusCounts.entries.reduce(
+      (a, b) => a.value > b.value ? a : b,
+    );
+    final mostCommonStatusText = mostCommonEntry.value > 0
+        ? mostCommonEntry.key.displayName
+        : 'None';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -268,9 +262,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildInsightRow(context, Icons.rocket_launch, 'You have $_activeCount active applications.'),
+          _buildInsightRow(
+            context,
+            Icons.rocket_launch,
+            'You have $_activeCount active applications.',
+          ),
           const SizedBox(height: 8),
-          _buildInsightRow(context, Icons.trending_up, 'Your most common status is $mostCommonStatusText.'),
+          _buildInsightRow(
+            context,
+            Icons.trending_up,
+            'Your most common status is $mostCommonStatusText.',
+          ),
         ],
       ),
     );
@@ -279,7 +281,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildInsightRow(BuildContext context, IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -330,7 +336,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   flex: flex > 0 ? flex : 1,
                   child: Container(
                     height: 16,
-                    color: _getStatusColor(status),
+                    color: AppTheme.getStatusColor(context, status),
                   ),
                 );
               }).toList(),
@@ -348,13 +354,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: _getStatusColor(status),
+                      color: AppTheme.getStatusColor(context, status),
                       shape: BoxShape.circle,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    _getStatusText(status),
+                    status.displayName,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurface,
                     ),
@@ -403,7 +409,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             const SizedBox(height: 24),
             Text(
               'No statistics yet',
-              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
