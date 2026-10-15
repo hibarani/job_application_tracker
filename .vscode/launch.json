@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "job_application_tracker",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--web-port=8080"
+      ]
+    }
+  ]
+}

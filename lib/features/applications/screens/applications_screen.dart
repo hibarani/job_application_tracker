@@ -591,14 +591,25 @@ class _ApplicationListCard extends StatelessWidget {
                 constraints: const BoxConstraints(),
                 color: application.isFavorite ? colorScheme.primary : colorScheme.onSurfaceVariant,
                 onPressed: () async {
-                  final storageService = LocalStorageService();
-                  final updatedApp = application.copyWith(isFavorite: !application.isFavorite);
-                  final apps = await storageService.loadApplications();
-                  final index = apps.indexWhere((a) => a.id == updatedApp.id);
-                  if (index != -1) {
-                    apps[index] = updatedApp;
-                    await storageService.saveApplications(apps);
-                    onUpdate();
+                  try {
+                    final storageService = LocalStorageService();
+                    final updatedApp = application.copyWith(isFavorite: !application.isFavorite);
+                    final apps = await storageService.loadApplications();
+                    final index = apps.indexWhere((a) => a.id == updatedApp.id);
+                    if (index != -1) {
+                      apps[index] = updatedApp;
+                      await storageService.saveApplications(apps);
+                      onUpdate();
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to update favorite: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
                 },
               ),
@@ -608,6 +619,7 @@ class _ApplicationListCard extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 color: colorScheme.onSurfaceVariant,
+                tooltip: 'Edit Application',
                 onPressed: () async {
                   final result = await Navigator.push(
                     context,
@@ -617,6 +629,52 @@ class _ApplicationListCard extends StatelessWidget {
                   );
                   if (result == true) {
                     onUpdate();
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: Icon(Icons.delete_outline, size: 20, color: colorScheme.error),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                tooltip: 'Delete Application',
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete Application?'),
+                      content: Text('Are you sure you want to delete "${application.jobTitle}" at "${application.companyName}"?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colorScheme.error,
+                            foregroundColor: colorScheme.onError,
+                          ),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    try {
+                      final storageService = LocalStorageService();
+                      await storageService.deleteApplication(application.id);
+                      onUpdate();
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to delete application: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
                   }
                 },
               ),

@@ -77,33 +77,70 @@ class JobApplication {
   }
 
   factory JobApplication.fromJson(Map<String, dynamic> json) {
-    ApplicationStatus parsedStatus;
-    try {
-      parsedStatus = ApplicationStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => ApplicationStatus.applied,
-      );
-    } catch (_) {
-      parsedStatus = ApplicationStatus.applied;
+    ApplicationStatus parsedStatus = ApplicationStatus.applied;
+    final dynamic rawStatus = json['status'];
+    if (rawStatus is String) {
+      try {
+        parsedStatus = ApplicationStatus.values.firstWhere(
+          (e) => e.name.toLowerCase() == rawStatus.toLowerCase(),
+          orElse: () => ApplicationStatus.applied,
+        );
+      } catch (_) {
+        parsedStatus = ApplicationStatus.applied;
+      }
     }
 
+    DateTime parsedAppDate = DateTime.now();
+    final dynamic rawAppDate = json['applicationDate'];
+    if (rawAppDate is String && rawAppDate.isNotEmpty) {
+      parsedAppDate = DateTime.tryParse(rawAppDate) ?? DateTime.now();
+    } else if (rawAppDate is DateTime) {
+      parsedAppDate = rawAppDate;
+    }
+
+    DateTime? parsedInterviewDate;
+    final dynamic rawInterviewDate = json['interviewDate'];
+    if (rawInterviewDate is String && rawInterviewDate.isNotEmpty) {
+      parsedInterviewDate = DateTime.tryParse(rawInterviewDate);
+    } else if (rawInterviewDate is DateTime) {
+      parsedInterviewDate = rawInterviewDate;
+    }
+
+    double? parsedSalary;
+    final dynamic rawSalary = json['salary'];
+    if (rawSalary is num) {
+      parsedSalary = rawSalary.toDouble();
+    } else if (rawSalary is String && rawSalary.trim().isNotEmpty) {
+      final sanitized = rawSalary.replaceAll(RegExp(r'[^0-9.]'), '');
+      parsedSalary = double.tryParse(sanitized);
+    }
+
+    bool parsedIsFavorite = false;
+    final dynamic rawFav = json['isFavorite'];
+    if (rawFav is bool) {
+      parsedIsFavorite = rawFav;
+    } else if (rawFav == 1 || rawFav == 'true') {
+      parsedIsFavorite = true;
+    }
+
+    final dynamic rawId = json['id'];
+    final String parsedId = rawId != null && rawId.toString().isNotEmpty
+        ? rawId.toString()
+        : DateTime.now().millisecondsSinceEpoch.toString();
+
     return JobApplication(
-      id: json['id'] as String? ?? '',
-      companyName: json['companyName'] as String? ?? '',
-      jobTitle: json['jobTitle'] as String? ?? '',
-      location: json['location'] as String? ?? '',
-      applicationDate: json['applicationDate'] != null 
-          ? DateTime.parse(json['applicationDate'] as String) 
-          : DateTime.now(),
+      id: parsedId,
+      companyName: json['companyName']?.toString() ?? '',
+      jobTitle: json['jobTitle']?.toString() ?? '',
+      location: json['location']?.toString() ?? '',
+      applicationDate: parsedAppDate,
       status: parsedStatus,
-      jobUrl: json['jobUrl'] as String? ?? '',
-      salary: (json['salary'] as num?)?.toDouble(),
-      interviewDate: json['interviewDate'] != null
-          ? DateTime.parse(json['interviewDate'] as String)
-          : null,
-      notes: json['notes'] as String? ?? '',
-      contactName: json['contactName'] as String?,
-      isFavorite: json['isFavorite'] as bool? ?? false,
+      jobUrl: json['jobUrl']?.toString() ?? '',
+      salary: parsedSalary,
+      interviewDate: parsedInterviewDate,
+      notes: json['notes']?.toString() ?? '',
+      contactName: json['contactName']?.toString(),
+      isFavorite: parsedIsFavorite,
     );
   }
 

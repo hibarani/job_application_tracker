@@ -169,8 +169,8 @@ class _AddApplicationScreenState extends State<AddApplicationScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not save the application. Please try again.'),
+          SnackBar(
+            content: Text('Could not save the application: $e'),
             backgroundColor: Colors.red,
           ),
         );

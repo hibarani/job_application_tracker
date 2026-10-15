@@ -96,16 +96,79 @@ class _ApplicationDetailsScreenState extends State<ApplicationDetailsScreen> {
             ),
             tooltip: _currentApplication.isFavorite ? 'Remove from favorites' : 'Mark as favorite',
             onPressed: () async {
-              final storageService = LocalStorageService();
-              final updatedApp = _currentApplication.copyWith(isFavorite: !_currentApplication.isFavorite);
-              final apps = await storageService.loadApplications();
-              final index = apps.indexWhere((a) => a.id == updatedApp.id);
-              if (index != -1) {
-                apps[index] = updatedApp;
-                await storageService.saveApplications(apps);
-                setState(() {
-                  _currentApplication = updatedApp;
-                });
+              try {
+                final storageService = LocalStorageService();
+                final updatedApp = _currentApplication.copyWith(isFavorite: !_currentApplication.isFavorite);
+                final apps = await storageService.loadApplications();
+                final index = apps.indexWhere((a) => a.id == updatedApp.id);
+                if (index != -1) {
+                  apps[index] = updatedApp;
+                  await storageService.saveApplications(apps);
+                  setState(() {
+                    _currentApplication = updatedApp;
+                  });
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to update favorite: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.delete_outline,
+              color: Color(0xFFD32F2F),
+            ),
+            tooltip: 'Delete Application',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: surfaceColor,
+                  title: const Text('Delete Application?', style: TextStyle(color: primaryText)),
+                  content: Text(
+                    'Are you sure you want to delete "${_currentApplication.jobTitle}" at "${_currentApplication.companyName}"?',
+                    style: const TextStyle(color: secondaryText),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel', style: TextStyle(color: secondaryText)),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD32F2F),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                try {
+                  final storageService = LocalStorageService();
+                  await storageService.deleteApplication(_currentApplication.id);
+                  if (context.mounted) {
+                    Navigator.pop(context, true);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to delete application: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               }
             },
           ),
